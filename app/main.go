@@ -54,7 +54,8 @@ func main() {
 
 	router.HandleFunc("/healthz", health)
 
-	router.With(middleware.Logger).Post("/template/{page-id}", p.CreateTemplate)
+	router.With(middleware.Logger).Get("/pages/{page-id}/templates", p.GetAllTemplate)
+	router.With(middleware.Logger).Post("/pages/{page-id}/templates", p.CreateTemplate)
 
 	port := ":" + config.Port
 	http.ListenAndServe(port, router)

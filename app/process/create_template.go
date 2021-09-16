@@ -6,6 +6,8 @@ import (
 	"test-mongo/app/model"
 	"test-mongo/app/process/reqreader"
 	"test-mongo/app/process/respsender"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (p *Process) CreateTemplate(w http.ResponseWriter, r *http.Request) {
@@ -19,12 +21,16 @@ func (p *Process) CreateTemplate(w http.ResponseWriter, r *http.Request) {
 		respsender.ResponseString(w, `{"success": false, "code": 20000, "error": "`+errStr+`"}`, http.StatusInternalServerError)
 		return
 	}
+
+	for i := range templateItems {
+		templateItems[i].Id = primitive.NewObjectID()
+	}
+
 	info := map[string]interface{}{
 		"page_id": pageId,
 	}
 
 	if _, err := p.Template.InsertTemplate(templateItems, info); err != nil {
-		log.Println("eiei from InsertTemplate in create_template")
 		respsender.ResponseString(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
