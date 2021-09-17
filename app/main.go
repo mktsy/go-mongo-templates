@@ -56,6 +56,7 @@ func main() {
 
 	router.With(middleware.Logger).Get("/pages/{page-id}/templates", p.GetAllTemplate)
 	router.With(middleware.Logger).Post("/pages/{page-id}/templates", p.CreateTemplate)
+	router.With(middleware.Logger).Put("/pages/{page-id}/templates/{template-id}", p.UpdateTemplate)
 
 	port := ":" + config.Port
 	http.ListenAndServe(port, router)

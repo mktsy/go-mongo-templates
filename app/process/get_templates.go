@@ -32,6 +32,7 @@ func (p *Process) GetAllTemplate(w http.ResponseWriter, r *http.Request) {
 			errStr = `unexpected database error occurred`
 			errResp = `{"success": false, "code": 20301, "error": "` + errStr + `"}`
 		}
+
 		log.Println(errStr + `:: ` + err.Error())
 		respsender.ResponseString(w, errResp, http.StatusInternalServerError)
 		return

@@ -20,6 +20,8 @@ type Mongoer interface {
 	FindAll(ctx context.Context, database, collection string, query interface{}, selectedField interface{}, limit, offset int64, sort interface{}) ([]bson.M, error)
 	Update(ctx context.Context, database, collection string, filter interface{}, update interface{}) error
 	UpdateMany(ctx context.Context, database, collection string, filter interface{}, update interface{}) error
+	FindOneAndUpdate(ctx context.Context, database, collection string, filter interface{}, update interface{}, selectedField interface{}, new bool) (interface{}, error)
+	Count(ctx context.Context, database, collection string, filter interface{}, skip int64) (int64, error)
 	Delete(ctx context.Context, database, collection string, filter interface{}) (err error)
 	GetClient() *mongo.Client
 	Close(ctx context.Context)
@@ -104,6 +106,38 @@ func (m *Mongo) Update(ctx context.Context, database, collection string, filter 
 func (m *Mongo) UpdateMany(ctx context.Context, database, collection string, filter interface{}, update interface{}) error {
 	_, err := m.client.Database(database).Collection(collection).UpdateMany(ctx, filter, update)
 	return err
+}
+
+func (m *Mongo) PushOne(ctx context.Context, database string, collection string, filter interface{}, update interface{}) error {
+	updateresult, err := m.client.Database(database).Collection(collection).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if updateresult.MatchedCount == 0 {
+		err = mongo.ErrNoDocuments
+	}
+
+	return err
+}
+
+func (m *Mongo) FindOneAndUpdate(ctx context.Context, database, collection string, filter interface{}, update interface{}, selectedField interface{}, new bool) (interface{}, error) {
+	var result bson.M
+	opt := options.Before
+	if new {
+		opt = options.After
+	}
+
+	err := m.client.Database(database).Collection(collection).FindOneAndUpdate(ctx, filter, update,
+		options.FindOneAndUpdate().SetProjection(selectedField),
+		options.FindOneAndUpdate().SetReturnDocument(opt),
+		options.FindOneAndUpdate().SetUpsert(false),
+	).Decode(&result)
+
+	return result, err
+}
+
+func (m *Mongo) Count(ctx context.Context, database, collection string, filter interface{}, skip int64) (int64, error) {
+	return m.client.Database(database).Collection(collection).CountDocuments(ctx, filter, options.Count().SetSkip(skip))
 }
 
 func (m *Mongo) Delete(ctx context.Context, database, collection string, filter interface{}) (err error) {

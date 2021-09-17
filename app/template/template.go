@@ -16,6 +16,10 @@ import (
 type Templater interface {
 	FindOne(ctx context.Context, query, selectedField interface{}) (model.Template, error)
 	InsertTemplate(templateItems []model.TemplateItem, info map[string]interface{}) (interface{}, error)
+	FindOneAndUpdate(ctx context.Context, filter interface{}, update interface{}, selectedField interface{}) (model.TemplateItem, error)
+	PushTemplateItem(templateItem []model.TemplateItem, info map[string]interface{}) error
+	UpdateTemplateItem(updatedItems model.TemplateItem, info map[string]interface{}) error
+	Count(ctx context.Context, filter interface{}, skip int64) (int64, error)
 }
 
 var DB string
@@ -44,6 +48,38 @@ func (t *Template) FindOne(ctx context.Context, query, selectedField interface{}
 	}
 
 	return template, err
+}
+
+func (t *Template) UpdateTemplateItem(updatedItems model.TemplateItem, info map[string]interface{}) error {
+	var pageId = info["page_id"].(string)
+	var templateId = info["template_id"].(primitive.ObjectID)
+	session, err := t.mongo.StartSession()
+	defer session.EndSession(context.Background())
+	if err != nil {
+		errStr := `unexpected error`
+		log.Println(errStr + `:: ` + err.Error())
+		return errors.New(`{"success": false, "code": 20006, "error": "` + errStr + `"}`)
+	}
+
+	updatedItems.Id = templateId
+	query := bson.M{
+		"page_id":               pageId,
+		"templates.template_id": templateId,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"templates.$": updatedItems,
+		},
+	}
+	err = mongo.WithSession(context.Background(), session, func(sessionContext mongo.SessionContext) error {
+		if err = t.mongo.Update(sessionContext, DB, Collection, query, update); err != nil {
+			errStr := `unexpected database error occurred`
+			log.Println(errStr + `:: ` + err.Error())
+			return errors.New(`{"success": false, "code": 10509, "error": "` + errStr + `"}`)
+		}
+		return nil
+	})
+	return nil
 }
 
 func (t *Template) InsertTemplate(templateItems []model.TemplateItem, info map[string]interface{}) (interface{}, error) {
@@ -79,4 +115,55 @@ func (t *Template) InsertTemplate(templateItems []model.TemplateItem, info map[s
 	}
 
 	return templateId, nil
+}
+
+func (t *Template) PushTemplateItem(templateItem []model.TemplateItem, info map[string]interface{}) error {
+	var pageId = info["page_id"].(string)
+
+	query := bson.M{
+		"page_id": pageId,
+	}
+
+	session, err := t.mongo.StartSession()
+	defer session.EndSession(context.Background())
+	if err != nil {
+		errStr := `unexpected error`
+		log.Println(errStr + `:: ` + err.Error())
+		return errors.New(`{"success": false, "code": 20006, "error": "` + errStr + `"}`)
+	}
+
+	err = mongo.WithSession(context.Background(), session, func(sessionContext mongo.SessionContext) error {
+		pushItem := bson.M{
+			"$push": bson.M{
+				"templates": bson.M{
+					"$each":     templateItem,
+					"$position": 0,
+				},
+			},
+		}
+
+		if err = t.mongo.Update(sessionContext, DB, Collection, query, pushItem); err != nil {
+			errStr := `unexpected database error occurred`
+			log.Println(errStr + `:: ` + err.Error())
+			return errors.New(`{"success": false, "code": 10509, "error": "` + errStr + `"}`)
+		}
+		return nil
+	})
+
+	return nil
+}
+
+func (t *Template) Count(ctx context.Context, filter interface{}, skip int64) (int64, error) {
+	return t.mongo.Count(ctx, DB, Collection, filter, skip)
+}
+
+func (t Template) FindOneAndUpdate(ctx context.Context, filter interface{}, update interface{}, selectedField interface{}) (model.TemplateItem, error) {
+	var templateItem model.TemplateItem
+	result, err := t.mongo.FindOneAndUpdate(ctx, DB, Collection, filter, update, selectedField, false)
+	if err == nil {
+		str, _ := bson.Marshal(result)
+		err = bson.Unmarshal(str, *&templateItem)
+	}
+
+	return templateItem, err
 }
