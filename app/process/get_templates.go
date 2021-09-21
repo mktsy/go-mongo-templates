@@ -14,12 +14,10 @@ import (
 
 func (p *Process) GetAllTemplate(w http.ResponseWriter, r *http.Request) {
 	pageId := reqreader.ReadPathParam(r, "page-id")
-
 	var template model.Template
 	query := bson.M{
 		"page_id": pageId,
 	}
-
 	template, err := p.Template.FindOne(context.TODO(), query, bson.M{})
 	if err != nil {
 		var errStr string
@@ -36,7 +34,6 @@ func (p *Process) GetAllTemplate(w http.ResponseWriter, r *http.Request) {
 		log.Println(errStr + `:: ` + err.Error())
 		respsender.ResponseString(w, errResp, http.StatusInternalServerError)
 		return
-
 	}
 
 	log.Println("found that template")

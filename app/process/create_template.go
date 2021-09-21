@@ -42,7 +42,6 @@ func (p *Process) CreateTemplate(w http.ResponseWriter, r *http.Request) {
 	info := map[string]interface{}{
 		"page_id": pageId,
 	}
-
 	if count != 0 {
 		if err = p.Template.PushTemplateItem(templateItems, info); err != nil {
 			respsender.ResponseString(w, err.Error(), http.StatusInternalServerError)

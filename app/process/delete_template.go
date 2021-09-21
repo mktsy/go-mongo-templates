@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"test-mongo/app/model"
 	"test-mongo/app/process/reqreader"
 	"test-mongo/app/process/respsender"
 
@@ -13,25 +12,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (p *Process) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
-	var updateTemplateItem []model.TemplateItem
+func (p *Process) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
 	pageId := reqreader.ReadPathParam(r, "page-id")
 	templateId, _ := primitive.ObjectIDFromHex(reqreader.ReadPathParam(r, "template-id"))
-	reqreader.ReadBody(r, &updateTemplateItem)
-
-	if len(updateTemplateItem) == 0 {
-		errStr := "no item in request body"
-		log.Println(errStr)
-		respsender.ResponseString(w, `{"success": false, "code": 20000, "error": "`+errStr+`"}`, http.StatusInternalServerError)
-		return
-	}
-
-	if len(updateTemplateItem) > 1 {
-		errStr := "too many item in request body"
-		log.Println(errStr)
-		respsender.ResponseString(w, `{"success": false, "code": 20000, "error": "`+errStr+`"}`, http.StatusInternalServerError)
-		return
-	}
 
 	query := bson.M{
 		"page_id":               pageId,
@@ -59,7 +42,8 @@ func (p *Process) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 		"page_id":     pageId,
 		"template_id": templateId,
 	}
-	if err := p.Template.UpdateTemplateItem(updateTemplateItem[0], info); err != nil {
+
+	if err := p.Template.PullTemplateItem(info); err != nil {
 		respsender.ResponseString(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
