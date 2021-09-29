@@ -54,7 +54,7 @@ func main() {
 
 	router.HandleFunc("/healthz", health)
 
-	router.With(middleware.Logger).Get("/pages/{page-id}/templates", p.GetAllTemplate)
+	router.With(middleware.Logger).Get("/pages/{page-id}/templates", p.GetTemplates)
 	router.With(middleware.Logger).Post("/pages/{page-id}/templates", p.CreateTemplate)
 	router.With(middleware.Logger).Put("/pages/{page-id}/templates/{template-id}", p.UpdateTemplate)
 	router.With(middleware.Logger).Delete("/pages/{page-id}/templates/{template-id}", p.DeleteTemplate)

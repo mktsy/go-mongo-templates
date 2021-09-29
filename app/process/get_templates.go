@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"test-mongo/app/model"
+	"strconv"
 	"test-mongo/app/process/reqreader"
 	"test-mongo/app/process/respsender"
 
@@ -12,13 +12,30 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (p *Process) GetAllTemplate(w http.ResponseWriter, r *http.Request) {
+func (p *Process) GetTemplates(w http.ResponseWriter, r *http.Request) {
 	pageId := reqreader.ReadPathParam(r, "page-id")
-	var template model.Template
+	limitStr := reqreader.ReadQueryParam(r, "limit")
+	offsetStr := reqreader.ReadQueryParam(r, "offset")
+
+	limitInt, _ := strconv.Atoi(limitStr)
+	offsetInt, _ := strconv.Atoi(offsetStr)
+
 	query := bson.M{
 		"page_id": pageId,
 	}
-	template, err := p.Template.FindOne(context.TODO(), query, bson.M{})
+	projectionOpt := bson.M{
+		"_id":       1,
+		"page_id":   1,
+		"title":     1,
+		"text":      1,
+		"image_url": 1,
+	}
+	sortOpt := bson.M{}
+
+	limitOpt := int64(limitInt)
+	offsetOpt := int64(offsetInt)
+
+	template, err := p.Template.FindAll(context.TODO(), &query, projectionOpt, limitOpt, offsetOpt, sortOpt)
 	if err != nil {
 		var errStr string
 		var errResp string

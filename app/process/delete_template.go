@@ -13,12 +13,10 @@ import (
 )
 
 func (p *Process) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
-	pageId := reqreader.ReadPathParam(r, "page-id")
 	templateId, _ := primitive.ObjectIDFromHex(reqreader.ReadPathParam(r, "template-id"))
 
 	query := bson.M{
-		"page_id":               pageId,
-		"templates.template_id": templateId,
+		"_id": templateId,
 	}
 	_, err := p.Template.FindOne(context.TODO(), query, bson.M{})
 	if err != nil {
@@ -39,15 +37,13 @@ func (p *Process) DeleteTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	info := map[string]interface{}{
-		"page_id":     pageId,
 		"template_id": templateId,
 	}
 
-	if err := p.Template.PullTemplateItem(info); err != nil {
+	if err := p.Template.DeleteTemplate(info); err != nil {
 		respsender.ResponseString(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	data := map[string]interface{}{
 		"success": true,
 	}

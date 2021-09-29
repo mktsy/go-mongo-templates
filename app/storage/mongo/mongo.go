@@ -108,18 +108,6 @@ func (m *Mongo) UpdateMany(ctx context.Context, database, collection string, fil
 	return err
 }
 
-func (m *Mongo) PushOne(ctx context.Context, database string, collection string, filter interface{}, update interface{}) error {
-	updateresult, err := m.client.Database(database).Collection(collection).UpdateOne(ctx, filter, update)
-	if err != nil {
-		return err
-	}
-	if updateresult.MatchedCount == 0 {
-		err = mongo.ErrNoDocuments
-	}
-
-	return err
-}
-
 func (m *Mongo) FindOneAndUpdate(ctx context.Context, database, collection string, filter interface{}, update interface{}, selectedField interface{}, new bool) (interface{}, error) {
 	var result bson.M
 	opt := options.Before

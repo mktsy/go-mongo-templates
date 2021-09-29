@@ -14,28 +14,19 @@ import (
 )
 
 func (p *Process) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
-	var updateTemplateItem []model.TemplateItem
-	pageId := reqreader.ReadPathParam(r, "page-id")
+	var updateTemplateItem model.Template
 	templateId, _ := primitive.ObjectIDFromHex(reqreader.ReadPathParam(r, "template-id"))
 	reqreader.ReadBody(r, &updateTemplateItem)
 
-	if len(updateTemplateItem) == 0 {
+	if updateTemplateItem.Title == "" {
 		errStr := "no item in request body"
 		log.Println(errStr)
 		respsender.ResponseString(w, `{"success": false, "code": 20000, "error": "`+errStr+`"}`, http.StatusInternalServerError)
 		return
 	}
 
-	if len(updateTemplateItem) > 1 {
-		errStr := "too many item in request body"
-		log.Println(errStr)
-		respsender.ResponseString(w, `{"success": false, "code": 20000, "error": "`+errStr+`"}`, http.StatusInternalServerError)
-		return
-	}
-
 	query := bson.M{
-		"page_id":               pageId,
-		"templates.template_id": templateId,
+		"_id": templateId,
 	}
 	_, err := p.Template.FindOne(context.TODO(), query, bson.M{})
 	if err != nil {
@@ -56,10 +47,9 @@ func (p *Process) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	info := map[string]interface{}{
-		"page_id":     pageId,
 		"template_id": templateId,
 	}
-	if err := p.Template.UpdateTemplateItem(updateTemplateItem[0], info); err != nil {
+	if err := p.Template.UpdateTemplateItem(updateTemplateItem, info); err != nil {
 		respsender.ResponseString(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
