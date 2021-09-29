@@ -55,13 +55,13 @@ func (p *Process) GetTemplates(w http.ResponseWriter, r *http.Request) {
 	if count > 0 && limitInt != 0 {
 		prev, next := utils.Pagination(offsetInt, limitInt, int(count))
 		if next != -999 {
-			result["next"] = `` + r.URL.Path + `&limit=` + limitStr + `&offset=` + strconv.Itoa(next) + ``
+			result["next"] = `` + r.URL.Path + `?limit=` + limitStr + `&offset=` + strconv.Itoa(next) + ``
 		} else {
 			result["next"] = ""
 		}
 
 		if prev != -999 {
-			result["prev"] = `` + r.URL.Path + `&limit=` + limitStr + `&offset=` + strconv.Itoa(prev) + ``
+			result["prev"] = `` + r.URL.Path + `?limit=` + limitStr + `&offset=` + strconv.Itoa(prev) + ``
 		} else {
 			result["prev"] = ""
 		}
